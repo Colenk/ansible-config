@@ -1,0 +1,7 @@
+- name: software | apt-mark hold | vscode and cherrytree
+  tags: apt-mark,hold,packages,workstation-packages
+  dpkg_selections:
+    name:
+      - cherrytree
+      - code
+    selection: hold

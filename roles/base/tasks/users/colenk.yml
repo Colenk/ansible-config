@@ -1,0 +1,214 @@
+- name: users | colenk | create group
+  tags: groups,colenk,users
+  group:
+    name: colenk
+    state: present
+
+- name: users | colenk | create user
+  tags: colenk,sudo,users
+  user:
+    name: colenk
+    group: colenk
+    groups: '{{ sudo_group }}'
+    state: present
+    password: '{{ colenk_passwd }}'
+    shell: /bin/bash
+
+- name: users | colenk | colenk | add sudoers file
+  tags: colenk,settings,sudo,system,users
+  copy:
+    src: users/sudoers_colenk
+    dest: /etc/sudoers.d/colenk
+    owner: root
+    group: root
+    mode: 0440
+
+- name: users | colenk | create .ssh directory
+  tags: dotfiles,colenk,ssh,users
+  file:
+    path: '{{ item.dir }}'
+    state: directory
+    owner: colenk
+    group: colenk
+    mode: 0700
+  with_items:
+    - { dir: '/home/colenk/.ssh' }
+
+- name: users | colenk | add public key for ssh'ing in
+  tags: dotfiles,colenk,ssh,ssh-keys,users
+  authorized_key:
+    user: colenk
+    key: '{{ item }}'
+  with_file:
+    - users/colenk/ssh/personalkey.pub
+
+- name: users | colenk | create config directories
+  tags: dotfiles,colenk,tmux,users,vim,zsh
+  file:
+    path: /home/colenk/{{ item.dir }}
+    state: directory
+    owner: colenk
+    group: colenk
+    mode: 0700
+  with_items:
+    - { dir: '.bash' }
+    - { dir: '.config' }
+    - { dir: '.config/htop' }
+    - { dir: '.config/mc' }
+    - { dir: '.tmux' }
+    - { dir: '.tmux/config' }
+    - { dir: '.tmux/plugins' }
+    - { dir: '.vim' }
+    - { dir: '.vim/autoload' }
+    - { dir: '.vim/bundle' }
+    - { dir: '.vim/colors' }
+    - { dir: '.vim/ftplugin' }
+    - { dir: '.zsh' }
+
+- name: users | colenk | copy tmux config (server version)
+  tags: dotfiles,users,colenk,tmux,users,vim,zsh
+  copy:
+    src: users/colenk/tmux/tmux.conf.server
+    dest: /home/colenk/.tmux.conf
+    owner: colenk
+    group: colenk
+    mode: 0600
+  when: "'server' in group_names"
+
+- name: users | colenk | copy tmux config (workstation version)
+  tags: dotfiles,users,colenk,tmux,users,vim,zsh
+  copy:
+    src: users/colenk/tmux/tmux.conf.workstation
+    dest: /home/colenk/.tmux.conf
+    owner: colenk
+    group: colenk
+    mode: 0600
+  when: "'workstation' in group_names"
+
+- name: users | colenk | copy dotfiles
+  tags: dotfiles,users,colenk,tmux,users,vim,zsh
+  copy:
+    src: users/colenk/{{ item.src }}
+    dest: /home/colenk/{{ item.dest }}
+    owner: colenk
+    group: colenk
+    mode: 0600
+  with_items:
+    - { src: 'bash/bash_aliases', dest: '.bash/bash_aliases' }
+    - { src: 'bash/bash_profile', dest: '.bash_profile' }
+    - { src: 'bash/bash_prompt', dest: '.bash/bash_prompt' }
+    - { src: 'bash/bash_functions', dest: '.bash/bash_functions' }
+    - { src: 'bash/bashrc', dest: '.bashrc' }
+    - { src: 'bash/profile', dest: '.profile' }
+    - { src: 'git/gitconfig', dest: '.gitconfig' }
+    - { src: 'htop/htoprc', dest: '.config/htop/htoprc' }
+    - { src: 'inputrc', dest: '.inputrc' }
+    - { src: 'mc/mc.ini', dest: '.config/mc/ini' }
+    - { src: 'vim/vimrc', dest: '.vimrc' }
+    - { src: 'zsh/zshrc', dest: '.zshrc' }
+
+# - name: users | colenk | clone tmux-completion plugin repository
+#   tags: dotfiles,colenk,users,tmux
+#   git:
+#     repo: https://github.com/srsudar/tmux-completion.git
+#     dest: /home/colenk/.tmux/plugins/completion
+#     force: yes
+#   notify: update_tmux_plugin_perms
+
+# - name: users | colenk | clone tmux-continuum plugin repository
+#   tags: dotfiles,colenk,users,tmux
+#   git:
+#     repo: https://github.com/tmux-plugins/tmux-continuum
+#     dest: /home/colenk/.tmux/plugins/continuum
+#     force: yes
+#   notify: update_tmux_plugin_perms
+
+# - name: users | colenk | clone tmux-resurrect plugin repository
+#   tags: dotfiles,colenk,users,tmux
+#   git:
+#     repo: https://github.com/tmux-plugins/tmux-resurrect
+#     dest: /home/colenk/.tmux/plugins/resurrect
+#     force: yes
+#   notify: update_tmux_plugin_perms
+
+- name: users | colenk | copy individual zsh config files
+  tags: dotfiles,colenk,users,zsh
+  copy:
+    src: users/colenk/zsh/{{ item.src }}
+    dest: /home/colenk/.zsh/{{ item.src }}
+    owner: colenk
+    group: colenk
+    mode: 0600
+  with_items:
+    - { src: 'aliases.zsh' }
+    - { src: 'bindkey.zsh' }
+    - { src: 'completion.zsh' }
+    - { src: 'exports.zsh' }
+    - { src: 'functions.zsh' }
+    - { src: 'history.zsh' }
+    - { src: 'path.zsh' }
+    - { src: 'plugins.zsh' }
+    - { src: 'prompt.zsh' }
+    - { src: 'setopt.zsh' }
+    - { src: 'theming.zsh' }
+# - name: users | colenk | copy vim ftype files
+#   tags: dotfiles,colenk,users,vim
+#   copy:
+#     src: users/colenk/vim/{{ item.src }}
+#     dest: /home/colenk/.vim/ftplugin/{{ item.src }}
+#     owner: colenk
+#     group: colenk
+#     mode: 0600
+#   with_items:
+#     - { src: 'cmake.vim' }
+#     - { src: 'cpp.vim' }
+#     - { src: 'html.vim' }
+#     - { src: 'perl.vim' }
+#     - { src: 'python.vim' }
+#     - { src: 'ruby.vim' }
+#     - { src: 'sql.vim' }
+#     - { src: 'xml.vim' }
+
+# - name: users | colenk | copy vim color files
+#   tags: dotfiles,colenk,users,vim
+#   copy:
+#     src: users/colenk/vim/{{ item.src }}
+#     dest: /home/colenk/.vim/colors/{{ item.src }}
+#     owner: colenk
+#     group: colenk
+#     mode: 0600
+#   with_items:
+#     - { src: 'bubblegum-256-dark.vim' }
+#     - { src: 'darktango.vim' }
+#     - { src: 'jellybeans.vim' }
+#     - { src: 'xoria256.vim' }
+#     - { src: 'zenburn.vim' }
+
+# - name: users | colenk | install pathogen
+#   tags: dotfiles,colenk,users,vim
+#   copy:
+#     src: users/colenk/vim/{{ item.src }}
+#     dest: '{{ item.dest }}'
+#     owner: colenk
+#     group: colenk
+#     mode: 0700
+#   with_items:
+#     - { src: 'pathogen.vim', dest: '/home/colenk/.vim/autoload/pathogen.vim' }
+
+# - name: users | colenk | checkout git repositories for vim
+#   tags: git,users,colenk
+#   become: yes
+#   git:
+#     repo: '{{ item.repo }}'
+#     dest: '{{ item.dest }}'
+#     force: yes
+#   with_items:
+#     - { repo: 'https://github.com/ctrlpvim/ctrlp.vim.git', dest: '/home/colenk/.vim/bundle/ctrlp.vim' }
+#     - { repo: 'https://github.com/davidhalter/jedi-vim.git', dest: '/home/colenk/.vim/bundle/jedi-vim' }
+#     - { repo: 'https://github.com/pearofducks/ansible-vim', dest: '/home/colenk/.vim/bundle/ansible-vim' }
+#     - { repo: 'https://github.com/rhysd/vim-grammarous.git', dest: '/home/colenk/.vim/bundle/vim-grammarous' }
+#     - { repo: 'https://github.com/ron89/thesaurus_query.vim', dest: '/home/colenk/.vim/bundle/thesaurus_query' }
+#     - { repo: 'https://github.com/scrooloose/nerdtree.git', dest: '/home/colenk/.vim/bundle/nerdtree' }
+#     - { repo: 'https://github.com/tpope/vim-obsession.git', dest: '/home/colenk/.vim/bundle/vim-obsession' }
+#     - { repo: 'https://github.com/vim-syntastic/syntastic.git', dest: '/home/colenk/.vim/bundle/syntastic' }
+#   notify: update_vim_bundle_perms

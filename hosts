@@ -1,0 +1,5 @@
+[workstation]
+parrot
+
+[server]
+foundry.mrlilal.com ansible_host=base
